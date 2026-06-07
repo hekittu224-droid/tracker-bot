@@ -38,7 +38,7 @@ def track(link_id):
 @app.route('/generate')
 def generate():
     link_id = str(uuid.uuid4())[:12]
-    full_link = f"https://yourdomain.com/track/{link_id}"  # ← Will change after deploy
+    full_link = f"https://web-production-39eb45.up.railway.app/track/{link_id}"
     return f"✅ Your new tracking link:\n\n{full_link}\n\nSend this to anyone!"
 
 if __name__ == '__main__':
